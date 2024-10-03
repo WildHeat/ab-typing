@@ -18,57 +18,7 @@ const LandingPage = () => {
     </div>
   ));
 
-  // const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-  //   const inputValue = e.target.value;
-
-  //   if (inputValue.length <= 0) {
-  //     setText("");
-  //     return;
-  //   }
-  //   let lastLetter = inputValue[inputValue.length - 1];
-
-  //   if ((lastLetter === " " && prevLetter === " ") || inputValue === " ") {
-  //     return;
-  //   }
-
-  //   setText(inputValue);
-  //   setPrevLetter(lastLetter);
-
-  //   const spaces = (inputValue.match(/ /g) || []).length;
-  //   if (spaces !== wordIndex.current) {
-  //     wordIndex.current = spaces;
-  //     let activeWords = Array.from(
-  //       document.getElementsByClassName("active-word")
-  //     );
-  //     activeWords.forEach((element) => {
-  //       element.classList.remove("active-word");
-  //     });
-  //     document
-  //       .getElementById("word" + wordIndex.current.toString())
-  //       ?.classList.add("active-word");
-  //   }
-
-  //   let activeWord = document.getElementById(
-  //     "word" + wordIndex.current.toString()
-  //   );
-
-  //   if (spaces !== wordIndex.current && lastLetter !== " ") {
-
-  //   }
-
-  //   if (activeWord !== null) {
-  //     let letters = Array.from(activeWord.getElementsByClassName("letter"));
-  //     for (let i = 0; i < letters.length; i++) {
-  //       if (!letters[i].classList.contains("typed")) {
-  //         letterIndex.current = i;
-  //         console.log(letterIndex);
-  //         break;
-  //       }
-  //     }
-  //     letters[letterIndex.current].classList.add("typed");
-  //   }
-  // };
-  const hanldeCtrl = (e: React.KeyboardEvent<HTMLElement>) => {
+  const handleCtrl = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === "Control") {
       ctrl.current = false;
     }
@@ -107,6 +57,7 @@ const LandingPage = () => {
       if (letterIndex.current === 0) {
         if (wordIndex.current !== 0) wordIndex.current--;
         if (ctrl.current === true) {
+          //TODO IMPLEEMNET REMOVE PREVIOUS WORD
           console.log("PReviocue");
         }
       } else {
@@ -166,10 +117,11 @@ const LandingPage = () => {
     <div>
       <h1>LandingPage</h1>
       <div className="all-words">{words}</div>
+      <div className="letter-highlighter"></div>
       <input
         value={text}
         onKeyDown={handleChange}
-        onKeyUp={hanldeCtrl}
+        onKeyUp={handleCtrl}
         onChange={(e) => {
           setText(e.target.value);
         }}

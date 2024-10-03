@@ -1,3 +1,7 @@
+.App{
+  background-color: rgb(58, 58, 58);
+}
+
 .all-words {
   font-size: large;
   display: flex;
@@ -12,6 +16,7 @@
 
 .letter {
   display: inline;
+  color: gray;
 }
 
 .active-word {
@@ -22,13 +27,20 @@
 }
 
 .typed {
-  color: rgb(90, 90, 90);
+  color: rgb(0, 0, 0);
 }
 
 .correct-letter {
-  background-color: rgb(115, 187, 115);
+  color: rgb(108, 174, 0);
 }
 
 .incorrect-letter {
-  background-color: red;
+  color: red;
+}
+
+.letter-highlighter{
+  margin: auto;
+  width: 3px;
+  height: 200px;
+  background-color: aqua;
 }
