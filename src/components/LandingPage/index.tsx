@@ -1,4 +1,4 @@
-import { useState, ChangeEvent, useRef } from "react";
+import { useState, useRef } from "react";
 
 const textToDisplay =
   "Space is a near-perfect vacuum without any air. It is not empty: it contains many forms of radiation, as well as particles of gas, dust, and other matter floating around the void. From the Earth, we can observe planets, stars, and galaxies that are within 46.5 billion light-years in any direction from our planet. This region of space is called the observable universe. The estimated age of the universe is from 11.4 billion to 13.8 billion years. What is outer space? From our Earth-bound perspective, outer space is everything that lies outside the boundary separating the Earth from space. There are different definitions of where exactly outer space begins. The most widely used boundary is Karman’s line, which sits 100 km above mean sea level. Starting from this mark, the air becomes too thin for regular aircraft (relying on lift) to fly.";
@@ -6,6 +6,7 @@ const textToDisplay =
 const LandingPage = () => {
   const wordIndex = useRef(0);
   const letterIndex = useRef(0);
+  const ctrl = useRef(false);
   const [text, setText] = useState("");
   const words = textToDisplay.split(" ").map((word, index) => (
     <div className="word" key={index} id={"word" + index.toString()}>
@@ -67,9 +68,17 @@ const LandingPage = () => {
   //     letters[letterIndex.current].classList.add("typed");
   //   }
   // };
+  const hanldeCtrl = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key === "Control") {
+      ctrl.current = false;
+    }
+  };
 
   const handleChange = (e: React.KeyboardEvent<HTMLElement>) => {
     // not letter
+    if (e.key === "Control") {
+      ctrl.current = true;
+    }
     if (e.key.length > 1 && e.key !== "Backspace") {
       return;
     }
@@ -89,7 +98,6 @@ const LandingPage = () => {
       for (let i = 0; i < letters.length; i++) {
         if (!letters[i].classList.contains("typed")) {
           letterIndex.current = i;
-          console.log(letterIndex.current);
           break;
         }
       }
@@ -98,15 +106,40 @@ const LandingPage = () => {
     if (e.key === "Backspace") {
       if (letterIndex.current === 0) {
         if (wordIndex.current !== 0) wordIndex.current--;
+        if (ctrl.current === true) {
+          console.log("PReviocue");
+        }
       } else {
         letterIndex.current--;
-        if (letters[letterIndex.current].classList.contains("added")) {
-          //remove letter from word
-          activeWord?.removeChild(letters[letterIndex.current]);
+        if (ctrl.current === false) {
+          if (letters[letterIndex.current].classList.contains("added")) {
+            //remove letter from word
+            activeWord?.removeChild(letters[letterIndex.current]);
+          } else {
+            letters[letterIndex.current].classList.remove("typed");
+            letters[letterIndex.current].classList.remove("correct-letter");
+            letters[letterIndex.current].classList.remove("incorrect-letter");
+          }
         } else {
-          letters[letterIndex.current].classList.remove("typed");
-          letters[letterIndex.current].classList.remove("correct-letter");
-          letters[letterIndex.current].classList.remove("incorrect-letter");
+          if (letterIndex.current === 0) {
+            //remove previous word
+            console.log("REMOVE PREV WORD");
+          } else {
+            //remove this word
+            while (letterIndex.current >= 0) {
+              if (letters[letterIndex.current].classList.contains("added")) {
+                //remove letter from word
+                activeWord?.removeChild(letters[letterIndex.current]);
+              } else {
+                letters[letterIndex.current].classList.remove("typed");
+                letters[letterIndex.current].classList.remove("correct-letter");
+                letters[letterIndex.current].classList.remove(
+                  "incorrect-letter"
+                );
+              }
+              letterIndex.current--;
+            }
+          }
         }
       }
     } else {
@@ -127,8 +160,6 @@ const LandingPage = () => {
         letterIndex.current++;
       }
     }
-
-    // activeWord?.classList.add("active-word");
   };
 
   return (
@@ -138,6 +169,7 @@ const LandingPage = () => {
       <input
         value={text}
         onKeyDown={handleChange}
+        onKeyUp={hanldeCtrl}
         onChange={(e) => {
           setText(e.target.value);
         }}
