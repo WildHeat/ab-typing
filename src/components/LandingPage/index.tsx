@@ -7,7 +7,11 @@ const LandingPage = () => {
   const wordIndex = useRef(0);
   const letterIndex = useRef(0);
   const ctrl = useRef(false);
+
+  const cursorX = useRef(0);
+  const cursorY = useRef(0);
   const [text, setText] = useState("");
+
   const words = textToDisplay.split(" ").map((word, index) => (
     <div className="word" key={index} id={"word" + index.toString()}>
       {word.split("").map((letter, letterInx) => (
@@ -24,11 +28,13 @@ const LandingPage = () => {
     }
   };
 
-  const getWordWithIndex = (index: number) =>{
-    return document.getElementById(`word${index.toString()}` );
-  }
+  const getWordWithIndex = (index: number) => {
+    return document.getElementById(`word${index.toString()}`);
+  };
 
   const handleChange = (e: React.KeyboardEvent<HTMLElement>) => {
+    // Cursor update
+
     // not letter
     if (e.key === "Control") {
       ctrl.current = true;
@@ -37,12 +43,7 @@ const LandingPage = () => {
       return;
     }
 
-    if (e.key === " ") {
-      wordIndex.current++;
-      return;
-    }
-
-    let activeWord = getWordWithIndex(wordIndex.current) 
+    let activeWord: HTMLElement = getWordWithIndex(wordIndex.current)!;
 
     let letters: string | any[] = [];
     if (activeWord !== null) {
@@ -55,27 +56,27 @@ const LandingPage = () => {
         }
       }
     }
+    if (e.key === " ") {
+      if (letterIndex.current !== 0) {
+        wordIndex.current++;
+        updateCursor();
+      }
+      return;
+    }
 
     // Backspace logic.
     if (e.key === "Backspace") {
       if (letterIndex.current === 0) {
         if (wordIndex.current !== 0) wordIndex.current--;
         if (ctrl.current === true) {
-          //TODO IMPLEEMNET REMOVE PREVIOUS WORD
-          let prevWord = getWordWithIndex(wordIndex.current)
+          let prevWord = getWordWithIndex(wordIndex.current);
           if (prevWord !== null) {
             letters = Array.from(prevWord.getElementsByClassName("letter"));
-            letterIndex.current = letters.length-1;
-            // for (let i = 0; i < letters.length; i++) {
-            //   if (!letters[i].classList.contains("typed")) {
-            //     letterIndex.current = i;
-            //     break;
-            //   }
-            // }
+            letterIndex.current = letters.length - 1;
             while (letterIndex.current >= 0) {
               if (letters[letterIndex.current].classList.contains("added")) {
                 //remove letter from word
-                activeWord?.removeChild(letters[letterIndex.current]);
+                activeWord.removeChild(letters[letterIndex.current]);
               } else {
                 letters[letterIndex.current].classList.remove("typed");
                 letters[letterIndex.current].classList.remove("correct-letter");
@@ -86,34 +87,16 @@ const LandingPage = () => {
               letterIndex.current--;
             }
           }
-                    
         }
       } else {
         letterIndex.current--;
         if (ctrl.current === false) {
-          if (letters[letterIndex.current].classList.contains("added")) {
-            //remove letter from word
-            activeWord?.removeChild(letters[letterIndex.current]);
-          } else {
-            letters[letterIndex.current].classList.remove("typed");
-            letters[letterIndex.current].classList.remove("correct-letter");
-            letters[letterIndex.current].classList.remove("incorrect-letter");
-          }
+          removeLetterFromWord(activeWord, letters);
         } else {
           //remove this word
           while (letterIndex.current >= 0) {
-            if (letters[letterIndex.current].classList.contains("added")) {
-              //remove letter from word
-              activeWord?.removeChild(letters[letterIndex.current]);
-            } else {
-              letters[letterIndex.current].classList.remove("typed");
-              letters[letterIndex.current].classList.remove("correct-letter");
-              letters[letterIndex.current].classList.remove(
-                "incorrect-letter"
-              );
-            }
+            removeLetterFromWord(activeWord, letters);
             letterIndex.current--;
-            
           }
         }
       }
@@ -123,7 +106,7 @@ const LandingPage = () => {
         const newElement = document.createElement("div");
         newElement.className = "letter typed added incorrect-letter";
         newElement.textContent = e.key;
-        activeWord?.appendChild(newElement);
+        activeWord.appendChild(newElement);
       } else {
         //add incorrect if it is wrong and add correct if it is right
         letters[letterIndex.current].classList.add("typed");
@@ -132,27 +115,61 @@ const LandingPage = () => {
         } else {
           letters[letterIndex.current].classList.add("incorrect-letter");
         }
-        letterIndex.current++;
+        // letterIndex.current++;
       }
+    }
+    updateCursor();
+  };
+
+  const updateCursor = () => {
+    let activeWord: HTMLElement = getWordWithIndex(wordIndex.current)!;
+    let letters: Array<Element> = [];
+    if (activeWord === null) {
+      return;
+    }
+    letters = Array.from(activeWord.getElementsByClassName("letter"));
+    let letIndex = letters.length + 1;
+    for (let i = 0; i < letters.length; i++) {
+      if (!letters[i].classList.contains("typed")) {
+        letIndex = i;
+        break;
+      }
+    }
+    if (letters[letIndex]) {
+      cursorX.current = letters[letIndex].getBoundingClientRect().top;
+      cursorY.current = letters[letIndex].getBoundingClientRect().left;
+    } else if (letters[letters.length - 1]) {
+      cursorX.current = letters[letters.length - 1].getBoundingClientRect().top;
+      cursorY.current =
+        letters[letters.length - 1].getBoundingClientRect().right;
+    } else {
+      console.log("FAILED TO UPDATE");
     }
   };
 
-  const removeLetterFromWord = (activeWord, letters) =>{
+  const removeLetterFromWord = (
+    activeWord: HTMLElement,
+    letters: Array<HTMLElement>
+  ) => {
     if (letters[letterIndex.current].classList.contains("added")) {
-      //remove letter from word
-      activeWord?.removeChild(letters[letterIndex.current]);
+      activeWord.removeChild(letters[letterIndex.current]);
     } else {
       letters[letterIndex.current].classList.remove("typed");
       letters[letterIndex.current].classList.remove("correct-letter");
       letters[letterIndex.current].classList.remove("incorrect-letter");
     }
-  }
+  };
 
   return (
     <div>
       <h1>LandingPage</h1>
-      <div className="all-words">{words}</div>
-      <div className="letter-highlighter"></div>
+      <div className="typing-container">
+        <div className="all-words">{words}</div>
+        <div
+          className="letter-highlighter"
+          style={{ top: `${cursorX.current}px`, left: `${cursorY.current}px` }}
+        ></div>
+      </div>
       <input
         value={text}
         onKeyDown={handleChange}
