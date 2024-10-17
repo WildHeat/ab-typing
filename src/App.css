@@ -3,9 +3,14 @@
 }
 
 .all-words {
+  display: flex;
+  flex-direction: column;
+}
+
+.line {
   font-size: large;
   display: flex;
-  flex-wrap: wrap;
+  /* flex-wrap: wrap; */
   width: 60%;
   margin: auto;
 }
@@ -45,8 +50,8 @@
   width: 2px;
   height: 3em;
   background-color: aqua;
-  top: 10%;
-  left: 10%;
+  /* top: 10%; */
+  /* left: 10%; */
   transition: 0.1s all;
   animation: blinker 1s linear infinite;
   border-radius: 2px;
@@ -54,7 +59,7 @@
 
 @keyframes blinker {
   50% {
-    opacity: 0.2;
+    opacity: 0.8;
   }
 }
 

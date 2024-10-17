@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const textToDisplay =
   "Space is a near-perfect vacuum without any air. It is not empty: it contains many forms of radiation, as well as particles of gas, dust, and other matter floating around the void. From the Earth, we can observe planets, stars, and galaxies that are within 46.5 billion light-years in any direction from our planet. This region of space is called the observable universe. The estimated age of the universe is from 11.4 billion to 13.8 billion years. What is outer space? From our Earth-bound perspective, outer space is everything that lies outside the boundary separating the Earth from space. There are different definitions of where exactly outer space begins. The most widely used boundary is Karman’s line, which sits 100 km above mean sea level. Starting from this mark, the air becomes too thin for regular aircraft (relying on lift) to fly.";
@@ -21,6 +21,33 @@ const LandingPage = () => {
       ))}
     </div>
   ));
+  let countWordIndex = -1;
+  const words2 = textToDisplay.split(".").map((line, index) => (
+    <div className="line" key={index} id={"line" + index.toString()}>
+      {line.split(" ").map((word, wordIndex) => {
+        if (word.trim() !== "") {
+          countWordIndex++;
+          return (
+            <div
+              className="word"
+              key={wordIndex}
+              id={"word" + countWordIndex.toString()}
+            >
+              {word.split("").map((letter, letterInx) => (
+                <div className="letter" key={letterInx}>
+                  {letter}
+                </div>
+              ))}
+            </div>
+          );
+        }
+      })}
+    </div>
+  ));
+
+  useEffect(() => {
+    updateCursor();
+  }, []);
 
   const handleCtrl = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === "Control") {
@@ -39,7 +66,7 @@ const LandingPage = () => {
     if (e.key === "Control") {
       ctrl.current = true;
     }
-    if (e.key.length > 1 && e.key !== "Backspace") {
+    if (e.key.length > 1 && e.key !== "Backspace" && e.key !== "Enter") {
       return;
     }
 
@@ -56,8 +83,25 @@ const LandingPage = () => {
         }
       }
     }
+    let parantLine = activeWord.parentElement;
+    let siblingWords: Array<Element> = [];
+    if (parantLine !== null) {
+      siblingWords = Array.from(parantLine.getElementsByClassName("word"));
+    }
+
     if (e.key === " ") {
       if (letterIndex.current !== 0) {
+        if (siblingWords[siblingWords.length - 1] === activeWord) {
+          return;
+        }
+        wordIndex.current++;
+        updateCursor();
+      }
+      return;
+    }
+
+    if (e.key === "Enter") {
+      if (siblingWords[siblingWords.length - 1] === activeWord) {
         wordIndex.current++;
         updateCursor();
       }
@@ -123,6 +167,7 @@ const LandingPage = () => {
 
   const updateCursor = () => {
     let activeWord: HTMLElement = getWordWithIndex(wordIndex.current)!;
+    console.log(activeWord);
     let letters: Array<Element> = [];
     if (activeWord === null) {
       return;
@@ -164,7 +209,7 @@ const LandingPage = () => {
     <div>
       <h1>LandingPage</h1>
       <div className="typing-container">
-        <div className="all-words">{words}</div>
+        <div className="all-words">{words2}</div>
         <div
           className="letter-highlighter"
           style={{ top: `${cursorX.current}px`, left: `${cursorY.current}px` }}
