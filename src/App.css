@@ -2,22 +2,42 @@
   background-color: rgb(58, 58, 58);
 }
 
+.input-field {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0);
+}
+
+.input-field:not(:focus) {
+  background-color: rgba(143, 143, 143, 0.164);
+  backdrop-filter: blur(10px);
+}
+
 .all-words {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  gap: 0.5em;
 }
 
 .line {
   font-size: large;
   display: flex;
-  /* flex-wrap: wrap; */
+  flex-wrap: wrap;
   width: 60%;
-  margin: auto;
+  /* margin: auto; */
 }
 
 .word {
   font-size: 2em;
-  padding: 0.2em;
+  padding: 0.2em 0.2em 0px 0.2em;
 }
 
 .letter {
@@ -46,12 +66,9 @@
 
 .letter-highlighter {
   position: absolute;
-  /* margin: auto; */
   width: 2px;
   height: 3em;
   background-color: aqua;
-  /* top: 10%; */
-  /* left: 10%; */
   transition: 0.1s all;
   animation: blinker 1s linear infinite;
   border-radius: 2px;
@@ -63,7 +80,9 @@
   }
 }
 
-/* .typing-container {
+.typing-container {
   position: relative;
-  inset: 10%;
-} */
+  margin: auto;
+  width: 80%;
+  height: 80vh;
+}

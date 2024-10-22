@@ -1,28 +1,29 @@
 import { useState, useRef, useEffect } from "react";
+import jeremiah12_5 from "./data.json";
 
-const textToDisplay =
-  "Space is a near-perfect vacuum without any air. It is not empty: it contains many forms of radiation, as well as particles of gas, dust, and other matter floating around the void. From the Earth, we can observe planets, stars, and galaxies that are within 46.5 billion light-years in any direction from our planet. This region of space is called the observable universe. The estimated age of the universe is from 11.4 billion to 13.8 billion years. What is outer space? From our Earth-bound perspective, outer space is everything that lies outside the boundary separating the Earth from space. There are different definitions of where exactly outer space begins. The most widely used boundary is Karman’s line, which sits 100 km above mean sea level. Starting from this mark, the air becomes too thin for regular aircraft (relying on lift) to fly.";
+// const textToDisplay =
+//   "Space is a near-perfect vacuum without any air. It is not empty: it contains many forms of radiation, as well as particles of gas, dust, and other matter floating around the void. From the Earth, we can observe planets, stars, and galaxies that are within 46.5 billion light-years in any direction from our planet. This region of space is called the observable universe. The estimated age of the universe is from 11.4 billion to 13.8 billion years. What is outer space? From our Earth-bound perspective, outer space is everything that lies outside the boundary separating the Earth from space. There are different definitions of where exactly outer space begins. The most widely used boundary is Karman’s line, which sits 100 km above mean sea level. Starting from this mark, the air becomes too thin for regular aircraft (relying on lift) to fly.";
 
 const LandingPage = () => {
   const wordIndex = useRef(0);
   const letterIndex = useRef(0);
   const ctrl = useRef(false);
 
-  const cursorX = useRef(0);
-  const cursorY = useRef(0);
-  const [text, setText] = useState("");
+  const [cursorX, setCursorX] = useState(0);
+  const [cursorY, setCursorY] = useState(0);
+  // const [text, setText] = useState("");
 
-  const words = textToDisplay.split(" ").map((word, index) => (
-    <div className="word" key={index} id={"word" + index.toString()}>
-      {word.split("").map((letter, letterInx) => (
-        <div className="letter" key={letterInx}>
-          {letter}
-        </div>
-      ))}
-    </div>
-  ));
+  // const words = jeremiah12_5.split(" ").map((word, index) => (
+  //   <div className="word" key={index} id={"word" + index.toString()}>
+  //     {word.split("").map((letter, letterInx) => (
+  //       <div className="letter" key={letterInx}>
+  //         {letter}
+  //       </div>
+  //     ))}
+  //   </div>
+  // ));
   let countWordIndex = -1;
-  const words2 = textToDisplay.split(".").map((line, index) => (
+  const words2 = jeremiah12_5.split("\n").map((line, index) => (
     <div className="line" key={index} id={"line" + index.toString()}>
       {line.split(" ").map((word, wordIndex) => {
         if (word.trim() !== "") {
@@ -61,6 +62,7 @@ const LandingPage = () => {
 
   const handleChange = (e: React.KeyboardEvent<HTMLElement>) => {
     // Cursor update
+    updateCursor();
 
     // not letter
     if (e.key === "Control") {
@@ -101,9 +103,12 @@ const LandingPage = () => {
     }
 
     if (e.key === "Enter") {
-      if (siblingWords[siblingWords.length - 1] === activeWord) {
-        wordIndex.current++;
-        updateCursor();
+      if (letterIndex.current !== 0) {
+        if (siblingWords[siblingWords.length - 1] === activeWord) {
+          wordIndex.current++;
+          updateCursor();
+          console.log(wordIndex.current);
+        }
       }
       return;
     }
@@ -159,7 +164,6 @@ const LandingPage = () => {
         } else {
           letters[letterIndex.current].classList.add("incorrect-letter");
         }
-        // letterIndex.current++;
       }
     }
     updateCursor();
@@ -180,13 +184,19 @@ const LandingPage = () => {
         break;
       }
     }
+    let parentContainer = Array.from(
+      document.getElementsByClassName("typing-container")
+    )[0];
+
+    let parent = parentContainer.getBoundingClientRect();
     if (letters[letIndex]) {
-      cursorX.current = letters[letIndex].getBoundingClientRect().top;
-      cursorY.current = letters[letIndex].getBoundingClientRect().left;
+      let child = letters[letIndex].getBoundingClientRect();
+      setCursorX(child.top - parent.top);
+      setCursorY(child.left - parent.left);
     } else if (letters[letters.length - 1]) {
-      cursorX.current = letters[letters.length - 1].getBoundingClientRect().top;
-      cursorY.current =
-        letters[letters.length - 1].getBoundingClientRect().right;
+      let child = letters[letters.length - 1].getBoundingClientRect();
+      setCursorX(child.top - parent.top);
+      setCursorY(child.right - parent.left);
     } else {
       console.log("FAILED TO UPDATE");
     }
@@ -210,19 +220,17 @@ const LandingPage = () => {
       <h1>LandingPage</h1>
       <div className="typing-container">
         <div className="all-words">{words2}</div>
+        <input
+          className="input-field"
+          value={""}
+          onKeyDown={handleChange}
+          onKeyUp={handleCtrl}
+        />
         <div
           className="letter-highlighter"
-          style={{ top: `${cursorX.current}px`, left: `${cursorY.current}px` }}
+          style={{ top: `${cursorX}px`, left: `${cursorY}px` }}
         ></div>
       </div>
-      <input
-        value={text}
-        onKeyDown={handleChange}
-        onKeyUp={handleCtrl}
-        onChange={(e) => {
-          setText(e.target.value);
-        }}
-      />
       {wordIndex.current}
     </div>
   );
