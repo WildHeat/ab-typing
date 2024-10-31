@@ -1,54 +1,84 @@
 import { useState, useRef, useEffect } from "react";
-import jeremiah12_5 from "./data.json";
-
-// const textToDisplay =
-//   "Space is a near-perfect vacuum without any air. It is not empty: it contains many forms of radiation, as well as particles of gas, dust, and other matter floating around the void. From the Earth, we can observe planets, stars, and galaxies that are within 46.5 billion light-years in any direction from our planet. This region of space is called the observable universe. The estimated age of the universe is from 11.4 billion to 13.8 billion years. What is outer space? From our Earth-bound perspective, outer space is everything that lies outside the boundary separating the Earth from space. There are different definitions of where exactly outer space begins. The most widely used boundary is Karman’s line, which sits 100 km above mean sea level. Starting from this mark, the air becomes too thin for regular aircraft (relying on lift) to fly.";
+import jeremiah12 from "./data.json";
 
 const LandingPage = () => {
   const wordIndex = useRef(0);
   const letterIndex = useRef(0);
+  const allWordsRef = useRef<HTMLDivElement | null>(null);
   const ctrl = useRef(false);
 
   const [cursorX, setCursorX] = useState(0);
   const [cursorY, setCursorY] = useState(0);
-  // const [text, setText] = useState("");
 
-  // const words = jeremiah12_5.split(" ").map((word, index) => (
-  //   <div className="word" key={index} id={"word" + index.toString()}>
-  //     {word.split("").map((letter, letterInx) => (
-  //       <div className="letter" key={letterInx}>
-  //         {letter}
-  //       </div>
-  //     ))}
-  //   </div>
-  // ));
+  const [typing, setTyping] = useState(false);
+  const [readyToStart, setReadyToStart] = useState(true);
+  const [timeLength, setTimeLength] = useState(10);
+  const [startTime, setStartTime] = useState(Date.now());
+  const [remaining, setRemaining] = useState(timeLength);
+  const [wordCount, setWordCount] = useState(0); // Track words typed
+  const [wpm, setWpm] = useState(0); // WPM to display after timer ends
+  const [rawWpm, setRawWpm] = useState(0);
+  const [timeMulti] = useState(timeLength / 60);
+
   let countWordIndex = -1;
-  const words2 = jeremiah12_5.split("\n").map((line, index) => (
-    <div className="line" key={index} id={"line" + index.toString()}>
-      {line.split(" ").map((word, wordIndex) => {
-        if (word.trim() !== "") {
-          countWordIndex++;
-          return (
-            <div
-              className="word"
-              key={wordIndex}
-              id={"word" + countWordIndex.toString()}
-            >
-              {word.split("").map((letter, letterInx) => (
-                <div className="letter" key={letterInx}>
-                  {letter}
-                </div>
-              ))}
-            </div>
-          );
-        }
-      })}
-    </div>
-  ));
 
-  useEffect(() => {
-    updateCursor();
-  }, []);
+  const [words, setWords] = useState<JSX.Element[]>([]);
+
+  const restart = () => {
+    console.log("restarting");
+
+    // Reset state and refs
+    setRemaining(timeLength);
+    setTyping(false);
+    setReadyToStart(true);
+    setWordCount(0);
+    setWpm(0);
+    setRawWpm(0);
+
+    wordIndex.current = 0;
+    letterIndex.current = 0;
+    countWordIndex = -1; // Reset countWordIndex for accurate element IDs
+
+    // Generate fresh content from jeremiah12
+    const text = jeremiah12.split("\n").map((line, index) => (
+      <div className="line" key={index} id={"line" + index.toString()}>
+        {line.split(" ").map((word, wordIndex) => {
+          if (word.trim() !== "") {
+            countWordIndex++;
+            return (
+              <div
+                className="word"
+                key={wordIndex}
+                id={"word" + countWordIndex.toString()}
+              >
+                {word.split("").map((letter, letterInx) => (
+                  <div className="letter" key={letterInx}>
+                    {letter}
+                  </div>
+                ))}
+              </div>
+            );
+          }
+        })}
+      </div>
+    ));
+    setWords(text); // Reset words with fresh content
+
+    // Clear any previous cursor positions
+    setCursorX(0);
+    setCursorY(0);
+
+    // Reset classes for all letters and words (if any)
+    const allLetters = document.getElementsByClassName("letter");
+    Array.from(allLetters).forEach((letter) => {
+      letter.classList.remove("typed", "correct-letter", "incorrect-letter");
+      if (letter.classList.contains("added")) {
+        letter.remove();
+      }
+    });
+
+    updateCursor(); // Reposition the cursor at the beginning
+  };
 
   const handleCtrl = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === "Control") {
@@ -60,17 +90,38 @@ const LandingPage = () => {
     return document.getElementById(`word${index.toString()}`);
   };
 
-  const handleChange = (e: React.KeyboardEvent<HTMLElement>) => {
-    // Cursor update
-    updateCursor();
+  const updateTime = () => {
+    let currentTime = Date.now();
+    let tempRemainingTime = timeLength - (currentTime - startTime) / 1000;
+    setRemaining(Math.round(tempRemainingTime));
+    if (tempRemainingTime <= 0) {
+      setReadyToStart(false); // Stop typing when timer reaches zero
+      // setIsTimerRunning(false);
+      setWpm(Math.round(wordCount / timeMulti));
+      setRawWpm(Math.round(wordIndex.current / timeMulti));
+    }
+  };
 
-    // not letter
+  const handleChange = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (typing) {
+      updateTime();
+    }
     if (e.key === "Control") {
       ctrl.current = true;
     }
     if (e.key.length > 1 && e.key !== "Backspace" && e.key !== "Enter") {
       return;
     }
+
+    if (!readyToStart) return; // Prevent typing if timer has ended
+
+    if (!typing) {
+      setTyping(true);
+      // setIsTimerRunning(true); // Start the timer countdown
+      setStartTime(Date.now());
+    }
+
+    updateCursor();
 
     let activeWord: HTMLElement = getWordWithIndex(wordIndex.current)!;
 
@@ -85,6 +136,7 @@ const LandingPage = () => {
         }
       }
     }
+
     let parantLine = activeWord.parentElement;
     let siblingWords: Array<Element> = [];
     if (parantLine !== null) {
@@ -97,6 +149,7 @@ const LandingPage = () => {
           return;
         }
         wordIndex.current++;
+        setWordCount((prev) => prev + 1); // Increment word count when space is pressed
         updateCursor();
       }
       return;
@@ -107,7 +160,6 @@ const LandingPage = () => {
         if (siblingWords[siblingWords.length - 1] === activeWord) {
           wordIndex.current++;
           updateCursor();
-          console.log(wordIndex.current);
         }
       }
       return;
@@ -124,7 +176,6 @@ const LandingPage = () => {
             letterIndex.current = letters.length - 1;
             while (letterIndex.current >= 0) {
               if (letters[letterIndex.current].classList.contains("added")) {
-                //remove letter from word
                 activeWord.removeChild(letters[letterIndex.current]);
               } else {
                 letters[letterIndex.current].classList.remove("typed");
@@ -142,7 +193,6 @@ const LandingPage = () => {
         if (ctrl.current === false) {
           removeLetterFromWord(activeWord, letters);
         } else {
-          //remove this word
           while (letterIndex.current >= 0) {
             removeLetterFromWord(activeWord, letters);
             letterIndex.current--;
@@ -151,13 +201,11 @@ const LandingPage = () => {
       }
     } else {
       if (letterIndex.current >= letters.length) {
-        //add letter
         const newElement = document.createElement("div");
         newElement.className = "letter typed added incorrect-letter";
         newElement.textContent = e.key;
         activeWord.appendChild(newElement);
       } else {
-        //add incorrect if it is wrong and add correct if it is right
         letters[letterIndex.current].classList.add("typed");
         if (letters[letterIndex.current].textContent === e.key) {
           letters[letterIndex.current].classList.add("correct-letter");
@@ -171,7 +219,6 @@ const LandingPage = () => {
 
   const updateCursor = () => {
     let activeWord: HTMLElement = getWordWithIndex(wordIndex.current)!;
-    console.log(activeWord);
     let letters: Array<Element> = [];
     if (activeWord === null) {
       return;
@@ -219,19 +266,31 @@ const LandingPage = () => {
     <div>
       <h1>LandingPage</h1>
       <div className="typing-container">
-        <div className="all-words">{words2}</div>
+        <div className="all-words" ref={allWordsRef}>
+          {words}
+        </div>
         <input
           className="input-field"
-          value={""}
+          readOnly
           onKeyDown={handleChange}
           onKeyUp={handleCtrl}
+          disabled={!readyToStart} // Disable input when timer ends
         />
         <div
           className="letter-highlighter"
           style={{ top: `${cursorX}px`, left: `${cursorY}px` }}
         ></div>
       </div>
-      {wordIndex.current}
+      <div className="timer-display">Time Left: {remaining}s</div>
+      <div className="wpm-display">WPM: {wpm}</div>
+      <div className="raw-wpm-display">RAW: {rawWpm}</div>
+      <button
+        onClick={() => {
+          restart();
+        }}
+      >
+        RESTART
+      </button>
     </div>
   );
 };
