@@ -18,11 +18,13 @@ const LandingPage = () => {
   const [wordCount, setWordCount] = useState(0); // Track words typed
   const [wpm, setWpm] = useState(0); // WPM to display after timer ends
   const [rawWpm, setRawWpm] = useState(0);
-  const [timeMulti] = useState(timeLength / 60);
+  // const [timeMulti] = useState(timeLength / 60);
 
-  const [wpmTime, setWpmTime] = useState({});
-  const [rawWpmTime, setRawWpmTime] = useState({});
-  const [mistakesTime, setMistakesTime] = useState<number[]>([]);
+  const [wpmTime, setWpmTime] = useState<{ [key: number]: number }>({});
+  const [rawWpmTime, setRawWpmTime] = useState<{ [key: number]: number }>({});
+  const [mistakesTime, setMistakesTime] = useState<{ [key: number]: number }>(
+    {}
+  );
 
   let countWordIndex = -1;
 
@@ -124,10 +126,13 @@ const LandingPage = () => {
   };
 
   const recordMistake = () => {
-    setMistakesTime([
+    const currentTime = Math.round(timeLength - remainingTime());
+    const temp =
+      1 + (currentTime in mistakesTime ? mistakesTime[currentTime] : 0);
+    setMistakesTime({
       ...mistakesTime,
-      Math.round(timeLength - remainingTime()),
-    ]);
+      [currentTime]: temp,
+    });
   };
 
   const recordWpm = (wpm: number) => {
