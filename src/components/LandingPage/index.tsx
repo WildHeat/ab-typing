@@ -20,6 +20,10 @@ const LandingPage = () => {
   const [rawWpm, setRawWpm] = useState(0);
   const [timeMulti] = useState(timeLength / 60);
 
+  const [wpmTime, setWpmTime] = useState({});
+  const [rawWpmTime, setRawWpmTime] = useState({});
+  const [mistakesTime, setMistakesTime] = useState<number[]>([]);
+
   let countWordIndex = -1;
 
   const [words, setWords] = useState<JSX.Element[]>([]);
@@ -34,6 +38,9 @@ const LandingPage = () => {
     setWordCount(0);
     setWpm(0);
     setRawWpm(0);
+    setRawWpmTime({});
+    setWpmTime({});
+    setMistakesTime([]);
 
     wordIndex.current = 0;
     letterIndex.current = 0;
@@ -90,16 +97,47 @@ const LandingPage = () => {
     return document.getElementById(`word${index.toString()}`);
   };
 
+  const remainingTime = () => {
+    return timeLength - (Date.now() - startTime) / 1000;
+  };
+
   const updateTime = () => {
-    let currentTime = Date.now();
-    let tempRemainingTime = timeLength - (currentTime - startTime) / 1000;
+    const tempRemainingTime = remainingTime();
     setRemaining(Math.round(tempRemainingTime));
+    let currentTimeMulti = (timeLength - tempRemainingTime) / 60;
+    let currentWpm = Math.round(wordCount / currentTimeMulti);
+    let currentRawWpm = Math.round(
+      (wordIndex.current + 0.5) / currentTimeMulti
+    );
+
+    recordWpm(currentWpm);
+    recordRawWpm(currentRawWpm);
+
     if (tempRemainingTime <= 0) {
       setReadyToStart(false); // Stop typing when timer reaches zero
-      // setIsTimerRunning(false);
-      setWpm(Math.round(wordCount / timeMulti));
-      setRawWpm(Math.round(wordIndex.current / timeMulti));
+      setWpm(currentWpm);
+      setRawWpm(currentRawWpm);
+      console.log(wpmTime);
+      console.log(rawWpmTime);
+      console.log(mistakesTime);
     }
+  };
+
+  const recordMistake = () => {
+    setMistakesTime([
+      ...mistakesTime,
+      Math.round(timeLength - remainingTime()),
+    ]);
+  };
+
+  const recordWpm = (wpm: number) => {
+    const currentTime = Math.round(timeLength - remainingTime());
+    setWpmTime({ ...wpmTime, [currentTime]: wpm });
+  };
+
+  const recordRawWpm = (rawWpm: number) => {
+    const currentTime = Math.round(timeLength - remainingTime());
+    setRawWpmTime({ ...rawWpmTime, [currentTime]: rawWpm });
   };
 
   const handleChange = (e: React.KeyboardEvent<HTMLElement>) => {
@@ -113,11 +151,10 @@ const LandingPage = () => {
       return;
     }
 
-    if (!readyToStart) return; // Prevent typing if timer has ended
+    if (!readyToStart) return; // Prevent typing if everything is not ready
 
     if (!typing) {
       setTyping(true);
-      // setIsTimerRunning(true); // Start the timer countdown
       setStartTime(Date.now());
     }
 
@@ -205,12 +242,14 @@ const LandingPage = () => {
         newElement.className = "letter typed added incorrect-letter";
         newElement.textContent = e.key;
         activeWord.appendChild(newElement);
+        recordMistake();
       } else {
         letters[letterIndex.current].classList.add("typed");
         if (letters[letterIndex.current].textContent === e.key) {
           letters[letterIndex.current].classList.add("correct-letter");
         } else {
           letters[letterIndex.current].classList.add("incorrect-letter");
+          recordMistake();
         }
       }
     }
