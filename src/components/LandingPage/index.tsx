@@ -1,10 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import jeremiah12 from "./data.json";
+import { SingleDataPoint } from "../../types/data";
+import AfterGameLineChart from "../AfterGameLineChart";
 
 const LandingPage = () => {
   const wordIndex = useRef(0);
   const letterIndex = useRef(0);
+
   const allWordsRef = useRef<HTMLDivElement | null>(null);
+  const inputFieldRef = useRef<HTMLInputElement | null>(null);
+
   const ctrl = useRef(false);
 
   const [cursorX, setCursorX] = useState(0);
@@ -12,19 +17,19 @@ const LandingPage = () => {
 
   const [typing, setTyping] = useState(false);
   const [readyToStart, setReadyToStart] = useState(true);
-  const [timeLength, setTimeLength] = useState(10);
+  const [endScreen, setEndScreen] = useState(false);
+  // const [timeLength, setTimeLength] = useState(60);
+  const timeLength = useRef(60);
   const [startTime, setStartTime] = useState(Date.now());
-  const [remaining, setRemaining] = useState(timeLength);
+  const [remaining, setRemaining] = useState(timeLength.current);
   const [wordCount, setWordCount] = useState(0); // Track words typed
   const [wpm, setWpm] = useState(0); // WPM to display after timer ends
   const [rawWpm, setRawWpm] = useState(0);
   // const [timeMulti] = useState(timeLength / 60);
 
-  const [wpmTime, setWpmTime] = useState<{ [key: number]: number }>({});
-  const [rawWpmTime, setRawWpmTime] = useState<{ [key: number]: number }>({});
-  const [mistakesTime, setMistakesTime] = useState<{ [key: number]: number }>(
-    {}
-  );
+  const [wpmTime, setWpmTime] = useState<SingleDataPoint>({});
+  const [rawWpmTime, setRawWpmTime] = useState<SingleDataPoint>({});
+  const [mistakesTime, setMistakesTime] = useState<SingleDataPoint>({});
 
   let countWordIndex = -1;
 
@@ -34,7 +39,7 @@ const LandingPage = () => {
     console.log("restarting");
 
     // Reset state and refs
-    setRemaining(timeLength);
+    setRemaining(timeLength.current);
     setTyping(false);
     setReadyToStart(true);
     setWordCount(0);
@@ -43,6 +48,7 @@ const LandingPage = () => {
     setRawWpmTime({});
     setWpmTime({});
     setMistakesTime([]);
+    setEndScreen(false);
 
     wordIndex.current = 0;
     letterIndex.current = 0;
@@ -69,6 +75,7 @@ const LandingPage = () => {
             );
           }
         })}
+        <div className="endline">↵</div>
       </div>
     ));
     setWords(text); // Reset words with fresh content
@@ -85,7 +92,7 @@ const LandingPage = () => {
         letter.remove();
       }
     });
-
+    inputFieldRef.current?.focus();
     updateCursor(); // Reposition the cursor at the beginning
   };
 
@@ -100,13 +107,13 @@ const LandingPage = () => {
   };
 
   const remainingTime = () => {
-    return timeLength - (Date.now() - startTime) / 1000;
+    return timeLength.current - (Date.now() - startTime) / 1000;
   };
 
   const updateTime = () => {
     const tempRemainingTime = remainingTime();
     setRemaining(Math.round(tempRemainingTime));
-    let currentTimeMulti = (timeLength - tempRemainingTime) / 60;
+    let currentTimeMulti = (timeLength.current - tempRemainingTime) / 60;
     let currentWpm = Math.round(wordCount / currentTimeMulti);
     let currentRawWpm = Math.round(
       (wordIndex.current + 0.5) / currentTimeMulti
@@ -116,17 +123,15 @@ const LandingPage = () => {
     recordRawWpm(currentRawWpm);
 
     if (tempRemainingTime <= 0) {
+      setEndScreen(true);
       setReadyToStart(false); // Stop typing when timer reaches zero
       setWpm(currentWpm);
       setRawWpm(currentRawWpm);
-      console.log(wpmTime);
-      console.log(rawWpmTime);
-      console.log(mistakesTime);
     }
   };
 
   const recordMistake = () => {
-    const currentTime = Math.round(timeLength - remainingTime());
+    const currentTime = Math.round(timeLength.current - remainingTime());
     const temp =
       1 + (currentTime in mistakesTime ? mistakesTime[currentTime] : 0);
     setMistakesTime({
@@ -136,12 +141,12 @@ const LandingPage = () => {
   };
 
   const recordWpm = (wpm: number) => {
-    const currentTime = Math.round(timeLength - remainingTime());
+    const currentTime = Math.round(timeLength.current - remainingTime());
     setWpmTime({ ...wpmTime, [currentTime]: wpm });
   };
 
   const recordRawWpm = (rawWpm: number) => {
-    const currentTime = Math.round(timeLength - remainingTime());
+    const currentTime = Math.round(timeLength.current - remainingTime());
     setRawWpmTime({ ...rawWpmTime, [currentTime]: rawWpm });
   };
 
@@ -306,14 +311,57 @@ const LandingPage = () => {
     }
   };
 
+  const handleChangeTimeLength = (duration: number) => {
+    timeLength.current = duration;
+    restart();
+  };
+
   return (
     <div>
       <h1>LandingPage</h1>
+      <div className="dropdown">
+        <button>{timeLength.current} Seconds</button>
+        <div className="dropdown-content">
+          <div
+            className="dropdown-time"
+            onClick={() => {
+              handleChangeTimeLength(15);
+            }}
+          >
+            15
+          </div>
+          <div
+            className="dropdown-time"
+            onClick={() => {
+              handleChangeTimeLength(30);
+            }}
+          >
+            30
+          </div>
+          <div
+            className="dropdown-time"
+            onClick={() => {
+              handleChangeTimeLength(60);
+            }}
+          >
+            60
+          </div>
+          <div
+            className="dropdown-time"
+            onClick={() => {
+              handleChangeTimeLength(120);
+            }}
+          >
+            120
+          </div>
+        </div>
+      </div>
       <div className="typing-container">
         <div className="all-words" ref={allWordsRef}>
           {words}
         </div>
         <input
+          ref={inputFieldRef}
           className="input-field"
           readOnly
           onKeyDown={handleChange}
@@ -335,6 +383,13 @@ const LandingPage = () => {
       >
         RESTART
       </button>
+      {endScreen && (
+        <AfterGameLineChart
+          wpm={wpmTime}
+          rawWpm={rawWpmTime}
+          mistakes={mistakesTime}
+        />
+      )}
     </div>
   );
 };
