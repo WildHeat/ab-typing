@@ -31,6 +31,8 @@ const LandingPage = () => {
   const [rawWpmTime, setRawWpmTime] = useState<SingleDataPoint>({});
   const [mistakesTime, setMistakesTime] = useState<SingleDataPoint>({});
 
+  const [correctCharCount, setCorrectCharCount] = useState(0);
+
   let countWordIndex = -1;
 
   const [words, setWords] = useState<JSX.Element[]>([]);
@@ -49,7 +51,7 @@ const LandingPage = () => {
     setWpmTime({});
     setMistakesTime([]);
     setEndScreen(false);
-
+    setCorrectCharCount(0);
     wordIndex.current = 0;
     letterIndex.current = 0;
     countWordIndex = -1; // Reset countWordIndex for accurate element IDs
@@ -110,23 +112,67 @@ const LandingPage = () => {
     return timeLength.current - (Date.now() - startTime) / 1000;
   };
 
+  const calculateWPM = () => {
+    /* 
+    so the current word index is the last word i should check.
+    So i loop from word index 0 to the current word and check each one, one by one.
+    once we have the total amout of correct ones we can divide by current word index and bang WPM 
+    */
+    let correctCount = 0;
+    for (let index = 0; index <= wordIndex.current; index++) {
+      if (isWordCorrect(index)) {
+        correctCount++;
+      }
+    }
+
+    const tempRemainingTime = remainingTime();
+    const currentTimeMulti = (timeLength.current - tempRemainingTime) / 60;
+    const currentWpm = Math.round(correctCount / currentTimeMulti);
+    return currentWpm;
+  };
+
+  const isWordCorrect = (index: number) => {
+    let wordToCheck: HTMLElement = getWordWithIndex(index)!;
+    if (wordToCheck == null) {
+      return false;
+    }
+
+    let letters: string | any[] = [];
+    letters = Array.from(wordToCheck.getElementsByClassName("letter"));
+    for (let i = 0; i < letters.length; i++) {
+      if (
+        !letters[i].classList.contains("typed") ||
+        letters[i].classList.contains("incorrect-letter")
+      ) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   const updateTime = () => {
     const tempRemainingTime = remainingTime();
+
     setRemaining(Math.round(tempRemainingTime));
-    let currentTimeMulti = (timeLength.current - tempRemainingTime) / 60;
-    let currentWpm = Math.round(wordCount / currentTimeMulti);
-    let currentRawWpm = Math.round(
+    const currentTimeMulti = (timeLength.current - tempRemainingTime) / 60;
+    const currentWpm = calculateWPM(); //Math.round(correctCharCount / 5 / currentTimeMulti);
+
+    const currentRawWpm = Math.round(
       (wordIndex.current + 0.5) / currentTimeMulti
     );
+    console.log(correctCharCount);
+    console.log("current time multi" + currentTimeMulti);
 
-    recordWpm(currentWpm);
-    recordRawWpm(currentRawWpm);
+    if (timeLength.current > 1) {
+      recordWpm(currentWpm);
+      recordRawWpm(currentRawWpm);
+    }
+    setWpm(currentWpm);
+    setRawWpm(currentRawWpm);
 
     if (tempRemainingTime <= 0) {
       setEndScreen(true);
       setReadyToStart(false); // Stop typing when timer reaches zero
-      setWpm(currentWpm);
-      setRawWpm(currentRawWpm);
     }
   };
 
@@ -257,6 +303,7 @@ const LandingPage = () => {
         letters[letterIndex.current].classList.add("typed");
         if (letters[letterIndex.current].textContent === e.key) {
           letters[letterIndex.current].classList.add("correct-letter");
+          setCorrectCharCount(correctCharCount + 1);
         } else {
           letters[letterIndex.current].classList.add("incorrect-letter");
           recordMistake();
@@ -356,7 +403,19 @@ const LandingPage = () => {
           </div>
         </div>
       </div>
-      <div className="typing-container">
+      {endScreen && (
+        <div className="end-screen-container">
+          <AfterGameLineChart
+            wpm={wpmTime}
+            rawWpm={rawWpmTime}
+            mistakes={mistakesTime}
+          />
+        </div>
+      )}
+      <div
+        className="typing-container"
+        style={{ display: endScreen ? "none" : "block" }}
+      >
         <div className="all-words" ref={allWordsRef}>
           {words}
         </div>
@@ -383,13 +442,6 @@ const LandingPage = () => {
       >
         RESTART
       </button>
-      {endScreen && (
-        <AfterGameLineChart
-          wpm={wpmTime}
-          rawWpm={rawWpmTime}
-          mistakes={mistakesTime}
-        />
-      )}
     </div>
   );
 };

@@ -8,6 +8,7 @@ import {
   YAxis,
   Tooltip,
   Legend,
+  Scatter,
 } from "recharts";
 
 interface ComponentProps {
@@ -35,17 +36,32 @@ const AfterGameLineChart: React.FC<ComponentProps> = ({
     }
     console.log(tempList);
     setTransformedData(tempList);
-  }, []);
+  }, [mistakes, rawWpm, wpm]);
 
   return (
-    <div>
-      <LineChart width={600} height={300} data={transformedData}>
-        <Line type="monotone" dataKey="wpm" stroke="#8884d8" />
+    <div className="line-chart-container">
+      <LineChart width={800} height={400} data={transformedData}>
+        <Line
+          strokeWidth={3}
+          type="monotone"
+          dataKey="wpm"
+          stroke="#8884d8"
+          dot={false}
+        />
         <Line
           type="monotone"
           dataKey="rawWpm"
           stroke="#82ca9d"
+          strokeWidth={3}
           strokeDasharray="5 5"
+          dot={false}
+        />
+        <Line
+          strokeWidth={3}
+          type="monotone"
+          dataKey="mistakes"
+          stroke="#FF0000"
+          dot={false}
         />
 
         <CartesianGrid stroke="#ccc" />

@@ -1,0 +1,17 @@
+Timer.
+WPM
+CPM
+Raw WPM
+…
+I should get all the words typed at the end and check how many of them are correct, incorrect or added
+…
+To get the line graph at the end, for every time something is typed I should get the current 
+	- WPM 
+	- RAW WPM
+	- Mistakes
+I should also track what the current time. so I can plot it on a graph Time on the X axis and the stat on the Y. 
+All on the same graph would be cool. Max 2.
+
+
+
+
