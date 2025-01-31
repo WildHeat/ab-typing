@@ -22,9 +22,10 @@ const LandingPage = () => {
   const timeLength = useRef(60);
   const [startTime, setStartTime] = useState(Date.now());
   const [remaining, setRemaining] = useState(timeLength.current);
-  const [wordCount, setWordCount] = useState(0); // Track words typed
+  // const [wordCount, setWordCount] = useState(0); // Track words typed
   const [wpm, setWpm] = useState(0); // WPM to display after timer ends
   const [rawWpm, setRawWpm] = useState(0);
+  const [mistakes, setMistakes] = useState(0);
   // const [timeMulti] = useState(timeLength / 60);
 
   const [wpmTime, setWpmTime] = useState<SingleDataPoint>({});
@@ -44,7 +45,7 @@ const LandingPage = () => {
     setRemaining(timeLength.current);
     setTyping(false);
     setReadyToStart(true);
-    setWordCount(0);
+    // setWordCount(0);
     setWpm(0);
     setRawWpm(0);
     setRawWpmTime({});
@@ -177,6 +178,7 @@ const LandingPage = () => {
   };
 
   const recordMistake = () => {
+    setMistakes((prev) => prev + 1);
     const currentTime = Math.round(timeLength.current - remainingTime());
     const temp =
       1 + (currentTime in mistakesTime ? mistakesTime[currentTime] : 0);
@@ -242,7 +244,7 @@ const LandingPage = () => {
           return;
         }
         wordIndex.current++;
-        setWordCount((prev) => prev + 1); // Increment word count when space is pressed
+        // setWordCount((prev) => prev + 1); // Increment word count when space is pressed
         updateCursor();
       }
       return;
@@ -364,7 +366,7 @@ const LandingPage = () => {
   };
 
   return (
-    <div>
+    <div className="page-container">
       <h1>LandingPage</h1>
       <div className="dropdown">
         <button>{timeLength.current} Seconds</button>
@@ -413,6 +415,12 @@ const LandingPage = () => {
         </div>
       )}
       <div
+        style={{ display: endScreen ? "none" : "block" }}
+        className="timer-display"
+      >
+        {remaining}
+      </div>
+      <div
         className="typing-container"
         style={{ display: endScreen ? "none" : "block" }}
       >
@@ -432,9 +440,15 @@ const LandingPage = () => {
           style={{ top: `${cursorX}px`, left: `${cursorY}px` }}
         ></div>
       </div>
-      <div className="timer-display">Time Left: {remaining}s</div>
-      <div className="wpm-display">WPM: {wpm}</div>
-      <div className="raw-wpm-display">RAW: {rawWpm}</div>
+      <div className="display-stats-container">
+        <div className="wpm-display">
+          WPM: <span>{wpm}</span>
+        </div>
+        <div className="raw-wpm-display">RAW: {rawWpm}</div>
+        <div className="mistakes-display">
+          MISTAKES: <span>{mistakes}</span>
+        </div>
+      </div>
       <button
         onClick={() => {
           restart();

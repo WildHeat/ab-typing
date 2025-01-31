@@ -135,3 +135,34 @@
 .line-chart-container {
   margin: auto;
 }
+
+.page-container {
+  height: 100vh;
+  transition: all 0.6s linear;
+}
+
+.timer-display {
+  margin: auto;
+  text-align: center;
+  font-size: 2em;
+  color: rgb(238, 0, 238);
+  font-weight: 1000;
+  /* text-shadow: 0px 0px 2px #ffffff; */
+}
+
+.display-stats-container {
+  color: white;
+  padding-top: 2em;
+  margin: auto;
+  display: flex;
+  gap: 5em;
+  justify-content: center;
+}
+
+.wpm-display span {
+  color: rgb(0, 187, 0);
+}
+
+.mistakes-display span {
+  color: red;
+}
