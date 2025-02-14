@@ -47,6 +47,10 @@
   padding: 0.2em 0.2em 0px 0.2em;
 }
 
+.hidden {
+  display: none;
+}
+
 .endline {
   color: rgb(85, 84, 84);
   position: absolute;
@@ -77,6 +81,10 @@
 
 .incorrect-letter {
   color: rgb(238, 82, 82);
+}
+
+.added {
+  color: rgb(133, 91, 91);
 }
 
 .letter-highlighter {

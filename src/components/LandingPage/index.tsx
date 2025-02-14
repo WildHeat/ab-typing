@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import jeremiah12 from "./data.json";
 import { SingleDataPoint } from "../../types/data";
 import AfterGameLineChart from "../AfterGameLineChart";
@@ -14,6 +14,8 @@ const LandingPage = () => {
 
   const [cursorX, setCursorX] = useState(0);
   const [cursorY, setCursorY] = useState(0);
+
+  const [prevLineWordIndex, setPrevLineWordIndex] = useState(0);
 
   const [typing, setTyping] = useState(false);
   const [readyToStart, setReadyToStart] = useState(true);
@@ -51,6 +53,7 @@ const LandingPage = () => {
     setRawWpmTime({});
     setWpmTime({});
     setMistakesTime([]);
+    setMistakes(0);
     setEndScreen(false);
     setCorrectCharCount(0);
     wordIndex.current = 0;
@@ -77,6 +80,7 @@ const LandingPage = () => {
               </div>
             );
           }
+          return null;
         })}
         <div className="endline">↵</div>
       </div>
@@ -109,16 +113,15 @@ const LandingPage = () => {
     return document.getElementById(`word${index.toString()}`);
   };
 
+  const getLineWithIndex = (index: number) => {
+    return document.getElementById(`line${index.toString()}`);
+  };
+
   const remainingTime = () => {
     return timeLength.current - (Date.now() - startTime) / 1000;
   };
 
   const calculateWPM = () => {
-    /* 
-    so the current word index is the last word i should check.
-    So i loop from word index 0 to the current word and check each one, one by one.
-    once we have the total amout of correct ones we can divide by current word index and bang WPM 
-    */
     let correctCount = 0;
     for (let index = 0; index <= wordIndex.current; index++) {
       if (isWordCorrect(index)) {
@@ -156,13 +159,13 @@ const LandingPage = () => {
 
     setRemaining(Math.round(tempRemainingTime));
     const currentTimeMulti = (timeLength.current - tempRemainingTime) / 60;
-    const currentWpm = calculateWPM(); //Math.round(correctCharCount / 5 / currentTimeMulti);
+    const currentWpm = calculateWPM();
 
     const currentRawWpm = Math.round(
       (wordIndex.current + 0.5) / currentTimeMulti
     );
-    console.log(correctCharCount);
-    console.log("current time multi" + currentTimeMulti);
+    // console.log(correctCharCount);
+    // console.log("current time multi" + currentTimeMulti);
 
     if (timeLength.current > 1) {
       recordWpm(currentWpm);
@@ -316,7 +319,7 @@ const LandingPage = () => {
   };
 
   const updateCursor = () => {
-    let activeWord: HTMLElement = getWordWithIndex(wordIndex.current)!;
+    let activeWord: HTMLElement | null = getWordWithIndex(wordIndex.current);
     let letters: Array<Element> = [];
     if (activeWord === null) {
       return;
@@ -333,17 +336,76 @@ const LandingPage = () => {
       document.getElementsByClassName("typing-container")
     )[0];
 
+    let currentX = cursorX;
+    let tempTop = currentX;
     let parent = parentContainer.getBoundingClientRect();
     if (letters[letIndex]) {
       let child = letters[letIndex].getBoundingClientRect();
-      setCursorX(child.top - parent.top);
+      tempTop = child.top - parent.top;
       setCursorY(child.left - parent.left);
     } else if (letters[letters.length - 1]) {
       let child = letters[letters.length - 1].getBoundingClientRect();
-      setCursorX(child.top - parent.top);
+      tempTop = child.top - parent.top;
       setCursorY(child.right - parent.left);
     } else {
       console.log("FAILED TO UPDATE");
+    }
+
+    if (Math.abs(currentX - tempTop) > 5) {
+      // Cursor has changed lines.
+      setPrevLineWordIndex(wordIndex.current);
+      if (prevLineWordIndex !== 0 && wordIndex.current !== prevLineWordIndex) {
+        setCursorX(currentX);
+        hideEveryWordBeforeWordIndex(prevLineWordIndex);
+      }
+    }
+
+    if (letters[letIndex]) {
+      let child = letters[letIndex].getBoundingClientRect();
+      setCursorX(child.top - parent.top);
+    } else if (letters[letters.length - 1]) {
+      let child = letters[letters.length - 1].getBoundingClientRect();
+      setCursorX(child.top - parent.top);
+    } else {
+      console.log("FAILED TO UPDATE");
+    }
+  };
+
+  const hideEveryWordBeforeWordIndex = (currentWordIndex: number) => {
+    console.log(
+      "HIDDING EVERY WORD BEFORE",
+      currentWordIndex,
+      wordIndex.current
+    );
+
+    if (currentWordIndex === wordIndex.current) {
+      return;
+    }
+    for (let index = currentWordIndex; index >= 0; index--) {
+      let activeWord: HTMLElement | null = getWordWithIndex(index);
+      if (activeWord === null || activeWord.classList.contains("hidden")) break;
+      activeWord.classList.add("hidden");
+    }
+    // need to remove the ENTER that is on the end of every line.
+    // first get the line and check if all the words are hidden. If YES then remove the "endline" classname
+    let activeWord: HTMLElement | null = getWordWithIndex(wordIndex.current);
+    if (activeWord === null) return;
+    let parantLine = activeWord.parentElement;
+    let siblingWords: Array<Element> = [];
+    if (parantLine === null) return;
+    let lineBeforeId = parseInt(parantLine.id.slice(4)) - 2;
+    if (lineBeforeId < 0) return;
+    // get line by parentLine.id - 1
+    let lineBefore: HTMLElement | null = getLineWithIndex(lineBeforeId);
+    if (lineBefore === null) return;
+    console.log(lineBeforeId);
+    siblingWords = Array.from(lineBefore.getElementsByClassName("word"));
+    if (
+      siblingWords.length !== 0 &&
+      siblingWords[siblingWords.length - 1].classList.contains("hidden")
+    ) {
+      console.log(siblingWords[siblingWords.length - 1].textContent);
+      lineBefore.classList.add("hidden");
     }
   };
 
