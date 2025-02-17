@@ -266,9 +266,12 @@ const LandingPage = () => {
     // Backspace logic.
     if (e.key === "Backspace") {
       if (letterIndex.current === 0) {
-        if (wordIndex.current !== 0) wordIndex.current--;
+        let prevWord = getWordWithIndex(wordIndex.current - 1);
+        if (prevWord && !prevWord.classList.contains("hidden"))
+          wordIndex.current--;
         if (ctrl.current === true) {
-          let prevWord = getWordWithIndex(wordIndex.current);
+          prevWord = getWordWithIndex(wordIndex.current);
+          // console.log(prevWord?.textContent)
           if (prevWord !== null) {
             letters = Array.from(prevWord.getElementsByClassName("letter"));
             letterIndex.current = letters.length - 1;
@@ -351,7 +354,7 @@ const LandingPage = () => {
       console.log("FAILED TO UPDATE");
     }
 
-    if (Math.abs(currentX - tempTop) > 5) {
+    if (Math.abs(currentX - tempTop) > 5 && currentX < tempTop) {
       // Cursor has changed lines.
       setPrevLineWordIndex(wordIndex.current);
       if (prevLineWordIndex !== 0 && wordIndex.current !== prevLineWordIndex) {
