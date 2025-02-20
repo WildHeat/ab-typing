@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import jeremiah12 from "./data.json";
+import textDataJson from "./data.json";
 import { SingleDataPoint } from "../../types/data";
 import AfterGameLineChart from "../AfterGameLineChart";
 
@@ -20,7 +20,8 @@ const LandingPage = () => {
   const [typing, setTyping] = useState(false);
   const [readyToStart, setReadyToStart] = useState(true);
   const [endScreen, setEndScreen] = useState(false);
-  const timeLength = useRef(60);
+  const timeLength = useRef(5);
+  const textOption = useRef<string>("Bible");
   const [startTime, setStartTime] = useState(Date.now());
   const [remaining, setRemaining] = useState(timeLength.current);
   const [wpm, setWpm] = useState(0); // WPM to display after timer ends
@@ -53,43 +54,18 @@ const LandingPage = () => {
     setMistakes(0);
     setEndScreen(false);
     setCorrectCharCount(0);
+    setPrevLineWordIndex(0);
     wordIndex.current = 0;
     letterIndex.current = 0;
-    countWordIndex = -1; // Reset countWordIndex for accurate element IDs
+    countWordIndex = -1;
 
-    // Generate fresh content from jeremiah12
-    // setWords([]);
-    const text = jeremiah12.split("\n").map((line, index) => (
-      <div className="line" key={index} id={"line" + index.toString()}>
-        {line.split(" ").map((word, wordIndex) => {
-          if (word.trim() !== "") {
-            countWordIndex++;
-            return (
-              <div
-                className="word"
-                key={wordIndex}
-                id={"word" + countWordIndex.toString()}
-              >
-                {word.split("").map((letter, letterInx) => (
-                  <div className="letter" key={letterInx}>
-                    {letter}
-                  </div>
-                ))}
-              </div>
-            );
-          }
-          return null;
-        })}
-        <div className="endline">↵</div>
-      </div>
-    ));
-    // setWords(text); // Reset words with fresh content
+    // handleTextOptionChange("Bible");
+    handleTextChange();
+    // Reset words with fresh content
 
-    // Clear any previous cursor positions
     setCursorX(0);
     setCursorY(0);
 
-    // Reset classes for all letters and words (if any)
     const allLetters = document.getElementsByClassName("letter");
     Array.from(allLetters).forEach((letter) => {
       letter.classList.remove("typed", "correct-letter", "incorrect-letter");
@@ -102,11 +78,6 @@ const LandingPage = () => {
       console.log("FINDING", element.textContent);
       element.classList.remove("hidden");
     });
-    // const hiddenElements = document.querySelectorAll(".hidden");
-    // // Remove the "hidden" class from each element
-    // hiddenElements.forEach((element) => {
-    //   element.classList.remove("hidden");
-    // });
     inputFieldRef.current?.focus();
     updateCursor(); // Reposition the cursor at the beginning
   };
@@ -398,6 +369,10 @@ const LandingPage = () => {
     }
     for (let index = currentWordIndex; index >= 0; index--) {
       let activeWord: HTMLElement | null = getWordWithIndex(index);
+      console.log(
+        "hidding words, checking from active word",
+        activeWord?.textContent
+      );
       if (activeWord === null || activeWord.classList.contains("hidden")) break;
       activeWord.classList.add("hidden");
     }
@@ -440,9 +415,47 @@ const LandingPage = () => {
     restart();
   };
 
+  const handleTextOptionChange = (option: string) => {
+    textOption.current = option;
+    restart();
+  };
+
+  const handleTextChange = () => {
+    if (textOption.current in textDataJson) {
+      const key = textOption.current as keyof typeof textDataJson;
+      const text: string = textDataJson[key];
+
+      const newText = text.split("\n").map((line, index) => (
+        <div className="line" key={index} id={"line" + index.toString()}>
+          {line.split(" ").map((word, wordIndex) => {
+            if (word.trim() !== "") {
+              countWordIndex++;
+              return (
+                <div
+                  className="word"
+                  key={wordIndex}
+                  id={"word" + countWordIndex.toString()}
+                >
+                  {word.split("").map((letter, letterInx) => (
+                    <div className="letter" key={letterInx}>
+                      {letter}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            return null;
+          })}
+          <div className="endline">↵</div>
+        </div>
+      ));
+      setWords(newText);
+    }
+  };
+
   return (
     <div className="page-container">
-      <h1>ABTyping</h1>
+      <h1 className="title">ABTyping</h1>
       <div className="dropdown">
         <button>{timeLength.current} Seconds</button>
         <div className="dropdown-content">
@@ -485,6 +498,27 @@ const LandingPage = () => {
             }}
           >
             120
+          </div>
+        </div>
+      </div>
+      <div className="dropdown">
+        <button>Text: {textOption.current}</button>
+        <div className="dropdown-content">
+          <div
+            className="dropdown-time"
+            onClick={() => {
+              handleTextOptionChange("Bible");
+            }}
+          >
+            Bible
+          </div>
+          <div
+            className="dropdown-time"
+            onClick={() => {
+              handleTextOptionChange("Source code");
+            }}
+          >
+            Source code
           </div>
         </div>
       </div>

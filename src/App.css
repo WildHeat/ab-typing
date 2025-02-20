@@ -7,6 +7,11 @@
   background-color: rgb(58, 58, 58);
 }
 
+.title {
+  text-align: center;
+  color: white;
+}
+
 .input-field {
   position: absolute;
   top: 0;
