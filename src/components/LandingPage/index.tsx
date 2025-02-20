@@ -20,15 +20,12 @@ const LandingPage = () => {
   const [typing, setTyping] = useState(false);
   const [readyToStart, setReadyToStart] = useState(true);
   const [endScreen, setEndScreen] = useState(false);
-  // const [timeLength, setTimeLength] = useState(60);
   const timeLength = useRef(60);
   const [startTime, setStartTime] = useState(Date.now());
   const [remaining, setRemaining] = useState(timeLength.current);
-  // const [wordCount, setWordCount] = useState(0); // Track words typed
   const [wpm, setWpm] = useState(0); // WPM to display after timer ends
   const [rawWpm, setRawWpm] = useState(0);
   const [mistakes, setMistakes] = useState(0);
-  // const [timeMulti] = useState(timeLength / 60);
 
   const [wpmTime, setWpmTime] = useState<SingleDataPoint>({});
   const [rawWpmTime, setRawWpmTime] = useState<SingleDataPoint>({});
@@ -61,6 +58,7 @@ const LandingPage = () => {
     countWordIndex = -1; // Reset countWordIndex for accurate element IDs
 
     // Generate fresh content from jeremiah12
+    // setWords([]);
     const text = jeremiah12.split("\n").map((line, index) => (
       <div className="line" key={index} id={"line" + index.toString()}>
         {line.split(" ").map((word, wordIndex) => {
@@ -85,7 +83,7 @@ const LandingPage = () => {
         <div className="endline">↵</div>
       </div>
     ));
-    setWords(text); // Reset words with fresh content
+    // setWords(text); // Reset words with fresh content
 
     // Clear any previous cursor positions
     setCursorX(0);
@@ -99,6 +97,16 @@ const LandingPage = () => {
         letter.remove();
       }
     });
+    const hiddenElements = document.getElementsByClassName("hidden");
+    Array.from(hiddenElements).forEach((element) => {
+      console.log("FINDING", element.textContent);
+      element.classList.remove("hidden");
+    });
+    // const hiddenElements = document.querySelectorAll(".hidden");
+    // // Remove the "hidden" class from each element
+    // hiddenElements.forEach((element) => {
+    //   element.classList.remove("hidden");
+    // });
     inputFieldRef.current?.focus();
     updateCursor(); // Reposition the cursor at the beginning
   };
@@ -164,8 +172,6 @@ const LandingPage = () => {
     const currentRawWpm = Math.round(
       (wordIndex.current + 0.5) / currentTimeMulti
     );
-    // console.log(correctCharCount);
-    // console.log("current time multi" + currentTimeMulti);
 
     if (timeLength.current > 1) {
       recordWpm(currentWpm);
@@ -175,9 +181,13 @@ const LandingPage = () => {
     setRawWpm(currentRawWpm);
 
     if (tempRemainingTime <= 0) {
-      setEndScreen(true);
-      setReadyToStart(false); // Stop typing when timer reaches zero
+      stopCurrentGame();
     }
+  };
+
+  const stopCurrentGame = () => {
+    setEndScreen(true);
+    setReadyToStart(false); // Stop typing when timer reaches zero
   };
 
   const recordMistake = () => {
@@ -233,12 +243,15 @@ const LandingPage = () => {
           break;
         }
       }
+    } else {
+      stopCurrentGame();
+      return;
     }
 
-    let parantLine = activeWord.parentElement;
+    let parentLine = activeWord.parentElement;
     let siblingWords: Array<Element> = [];
-    if (parantLine !== null) {
-      siblingWords = Array.from(parantLine.getElementsByClassName("word"));
+    if (parentLine !== null) {
+      siblingWords = Array.from(parentLine.getElementsByClassName("word"));
     }
 
     if (e.key === " ") {
@@ -247,13 +260,19 @@ const LandingPage = () => {
           return;
         }
         wordIndex.current++;
-        // setWordCount((prev) => prev + 1); // Increment word count when space is pressed
         updateCursor();
       }
       return;
     }
 
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && parentLine !== null) {
+      let nextLineId = parseInt(parentLine.id.slice(4)) + 1;
+      let nextLine = getLineWithIndex(nextLineId);
+      if (nextLine === null) {
+        stopCurrentGame();
+        return;
+      }
+      // let nextLine = getLineWithIndex(parseInt(parentLine.id) + 1);
       if (letterIndex.current !== 0) {
         if (siblingWords[siblingWords.length - 1] === activeWord) {
           wordIndex.current++;
@@ -271,7 +290,6 @@ const LandingPage = () => {
           wordIndex.current--;
         if (ctrl.current === true) {
           prevWord = getWordWithIndex(wordIndex.current);
-          // console.log(prevWord?.textContent)
           if (prevWord !== null) {
             letters = Array.from(prevWord.getElementsByClassName("letter"));
             letterIndex.current = letters.length - 1;
@@ -375,12 +393,6 @@ const LandingPage = () => {
   };
 
   const hideEveryWordBeforeWordIndex = (currentWordIndex: number) => {
-    console.log(
-      "HIDDING EVERY WORD BEFORE",
-      currentWordIndex,
-      wordIndex.current
-    );
-
     if (currentWordIndex === wordIndex.current) {
       return;
     }
@@ -393,21 +405,19 @@ const LandingPage = () => {
     // first get the line and check if all the words are hidden. If YES then remove the "endline" classname
     let activeWord: HTMLElement | null = getWordWithIndex(wordIndex.current);
     if (activeWord === null) return;
-    let parantLine = activeWord.parentElement;
+    let parentLine = activeWord.parentElement;
     let siblingWords: Array<Element> = [];
-    if (parantLine === null) return;
-    let lineBeforeId = parseInt(parantLine.id.slice(4)) - 2;
+    if (parentLine === null) return;
+    let lineBeforeId = parseInt(parentLine.id.slice(4)) - 2;
     if (lineBeforeId < 0) return;
     // get line by parentLine.id - 1
     let lineBefore: HTMLElement | null = getLineWithIndex(lineBeforeId);
     if (lineBefore === null) return;
-    console.log(lineBeforeId);
     siblingWords = Array.from(lineBefore.getElementsByClassName("word"));
     if (
       siblingWords.length !== 0 &&
       siblingWords[siblingWords.length - 1].classList.contains("hidden")
     ) {
-      console.log(siblingWords[siblingWords.length - 1].textContent);
       lineBefore.classList.add("hidden");
     }
   };
@@ -432,10 +442,18 @@ const LandingPage = () => {
 
   return (
     <div className="page-container">
-      <h1>LandingPage</h1>
+      <h1>ABTyping</h1>
       <div className="dropdown">
         <button>{timeLength.current} Seconds</button>
         <div className="dropdown-content">
+          <div
+            className="dropdown-time"
+            onClick={() => {
+              handleChangeTimeLength(5);
+            }}
+          >
+            5 test
+          </div>
           <div
             className="dropdown-time"
             onClick={() => {
