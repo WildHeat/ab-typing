@@ -8,7 +8,6 @@ import {
   YAxis,
   Tooltip,
   Legend,
-  Scatter,
 } from "recharts";
 
 interface ComponentProps {
@@ -45,13 +44,13 @@ const AfterGameLineChart: React.FC<ComponentProps> = ({
           strokeWidth={3}
           type="monotone"
           dataKey="wpm"
-          stroke="#8884d8"
+          stroke="#00FF00"
           dot={false}
         />
         <Line
           type="monotone"
           dataKey="rawWpm"
-          stroke="#82ca9d"
+          stroke="#FFEA00"
           strokeWidth={3}
           strokeDasharray="5 5"
           dot={false}

@@ -397,6 +397,34 @@ const LandingPage = () => {
     }
   };
 
+  const oldFetch = async (url: string) => {
+    return await fetch(url, {
+      method: "GET",
+    })
+      .then((response) => {
+        if (response.status === 200) {
+          return response.json();
+        }
+        throw response;
+      })
+      .catch((errorResponse) => {
+        console.error(errorResponse);
+      });
+  };
+
+  const fetchData = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error);
+    }
+  };
+
   const removeLetterFromWord = (
     activeWord: HTMLElement,
     letters: Array<HTMLElement>
@@ -421,6 +449,10 @@ const LandingPage = () => {
   };
 
   const handleTextChange = () => {
+    let fetchedData = oldFetch(
+      "https://raw.githubusercontent.com/WildHeat/esv/refs/heads/master/books%20json/Rev.json"
+    );
+    console.log(fetchedData);
     if (textOption.current in textDataJson) {
       const key = textOption.current as keyof typeof textDataJson;
       const text: string = textDataJson[key];
